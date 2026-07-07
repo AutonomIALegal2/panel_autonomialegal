@@ -170,6 +170,14 @@ function useLeads() {
     persistLead({ messages: [], events: [], ...lead });
   }, [setLeads]);
 
+  const deleteLead = uC((id) => {
+    setLeads((prev) => prev.filter((l) => l.id !== id));
+    (async () => {
+      try { const { error } = await sb.from('leads').delete().eq('id', id); if (error) throw error; }
+      catch (e) { flagError('No se pudo eliminar el lead: ' + (e.message || e)); }
+    })();
+  }, [setLeads]);
+
   const replaceAll = uC((next) => {
     const prev = leadsRef.current;
     setLeads(next);
@@ -187,7 +195,7 @@ function useLeads() {
     })();
   }, [setLeads]);
 
-  return { leads, setLeads, patchLead, setStage, addMessage, addCapture, addLead, replaceAll };
+  return { leads, setLeads, patchLead, setStage, addMessage, addCapture, addLead, deleteLead, replaceAll };
 }
 
 /* ══════════════════════ useConfig ══════════════════════ */

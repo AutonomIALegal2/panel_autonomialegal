@@ -6,6 +6,8 @@
 /* etapas que implican que se envió el M1 */
 const SENT_STAGES = new Set(['m1', 'respondio', 'oferta', 'acceso', 'trial', 'llamada', 'cliente', 'silencio', 'nevera', 'perdido']);
 const RESPONDED_STAGES = new Set(['respondio', 'oferta', 'acceso', 'trial', 'llamada', 'cliente']);
+// avanzó MÁS ALLÁ de "respondió" → implica respuesta positiva (NO incluye 'respondio', que depende de reply_type)
+const ADVANCED_STAGES = new Set(['oferta', 'acceso', 'trial', 'llamada', 'cliente']);
 const PIPELINE_MONEY_STAGES = new Set(['oferta', 'acceso', 'trial', 'llamada']);
 
 /* pasta en juego = leads en oferta/acceso/trial/llamada × ticket medio */
@@ -36,7 +38,7 @@ function queues(leads) {
 function replyStats(leads) {
   const sent = leads.filter((l) => SENT_STAGES.has(l.stage));
   const replied = leads.filter((l) => RESPONDED_STAGES.has(l.stage) || l.replyType);
-  const positives = leads.filter((l) => l.replyType === 'POSITIVA' || RESPONDED_STAGES.has(l.stage));
+  const positives = leads.filter((l) => l.replyType === 'POSITIVA' || ADVANCED_STAGES.has(l.stage));
   return {
     sent: sent.length,
     replied: replied.length,
@@ -69,7 +71,7 @@ function abStats(leads, minMature = 7) {
     const mature = l.m1Date && daysFromToday(l.m1Date) <= -minMature;
     if (mature) out[v].madurados++;
     if (RESPONDED_STAGES.has(l.stage) || l.replyType) out[v].respuestas++;
-    if (l.replyType === 'POSITIVA' || RESPONDED_STAGES.has(l.stage)) { if (mature) out[v].positivas++; }
+    if (l.replyType === 'POSITIVA' || ADVANCED_STAGES.has(l.stage)) { if (mature) out[v].positivas++; }
   });
   return out;
 }
@@ -104,7 +106,7 @@ function funnel(leads) {
   const counts = {
     m1: leads.filter((l) => SENT_STAGES.has(l.stage)).length,
     reply: leads.filter((l) => RESPONDED_STAGES.has(l.stage) || l.replyType).length,
-    positive: leads.filter((l) => l.replyType === 'POSITIVA' || RESPONDED_STAGES.has(l.stage)).length,
+    positive: leads.filter((l) => l.replyType === 'POSITIVA' || ADVANCED_STAGES.has(l.stage)).length,
     oferta: atLeast('oferta'), acceso: atLeast('acceso'), trial: atLeast('trial'),
     llamada: atLeast('llamada'), cliente: atLeast('cliente'),
   };
@@ -129,14 +131,14 @@ function cutBy(leads, keyFn) {
     const k = keyFn(l); if (k == null) return;
     (map[k] = map[k] || { n: 0, pos: 0 });
     map[k].n++;
-    if (l.replyType === 'POSITIVA' || RESPONDED_STAGES.has(l.stage)) map[k].pos++;
+    if (l.replyType === 'POSITIVA' || ADVANCED_STAGES.has(l.stage)) map[k].pos++;
   });
   return Object.entries(map).map(([k, v]) => ({ key: k, n: v.n, rate: rate(v.pos, v.n) }))
     .sort((a, b) => b.rate - a.rate);
 }
 
 Object.assign(window, {
-  SENT_STAGES, RESPONDED_STAGES, PIPELINE_MONEY_STAGES,
+  SENT_STAGES, RESPONDED_STAGES, ADVANCED_STAGES, PIPELINE_MONEY_STAGES,
   pipelineMoney, queues, replyStats, ammoStatus, abStats, touchBreakdown,
   FUNNEL_STEPS, funnel, reached, cutBy,
 });

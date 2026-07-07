@@ -75,7 +75,7 @@ function ReplyModal({ lead, onClose, onConfirm }) {
 
 function App() {
   const [config, setConfig] = useConfig();
-  const { leads, patchLead, setStage: hookSetStage, addMessage, addCapture, addLead, replaceAll } = useLeads();
+  const { leads, patchLead, setStage: hookSetStage, addMessage, addCapture, addLead, deleteLead, replaceAll } = useLeads();
   const { cycles, addCycle, setCycles } = useCycles();
   const { notes: bitacora, addNote } = useBitacora();
   const { daily, bump } = useDaily();
@@ -150,7 +150,21 @@ function App() {
     const lead = leadsRef.current.find((l) => l.id === id); if (!lead || lead.stage === stage) return;
     if (stage === 'respondio' && !lead.replyType) { setPendingReply(lead); return; }
     const prev = leadsRef.current;
-    hookSetStage(id, stage);
+    const fwdIdx = PDATA.ETAPA_ORDER.indexOf(stage);
+    const respIdx = PDATA.ETAPA_ORDER.indexOf('respondio');
+    if (fwdIdx > respIdx && !lead.replyType) {
+      // avanzar directo a una etapa del embudo (oferta+) implica respuesta positiva → dejar rastro completo
+      patchLead(id, (l) => ({
+        stage, replyType: 'POSITIVA', repliedAt: PDATA.TODAY,
+        events: [
+          { ts: nowTs(), kind: 'reply', text: 'Respuesta positiva (registrada al avanzar)' },
+          { ts: nowTs(), kind: 'stage', text: `Movido a «${PDATA.etapa(stage).name}»` },
+          ...(l.events || []),
+        ],
+      }));
+    } else {
+      hookSetStage(id, stage);
+    }
     const et = PDATA.etapa(stage);
     if (stage === 'cliente') { celebrate('cliente'); pushToast(`🏆 ¡${lead.nombre.split(' ')[0]} es CLIENTE! A cobrar 💰`, { emoji: '🏆', undo: prev }); }
     else pushToast(`${lead.nombre.split(' ')[0]} → «${et.name}»`, { emoji: et.emoji, undo: prev });
@@ -202,7 +216,14 @@ function App() {
     return () => window.removeEventListener('keydown', h);
   }, [toasts]);
 
-  const actions = { copy, markSent, markFollowup, markReply, setStage, dropStage, toSilence, wake, openLead, launchCycle, addCapture, patchLead, ticket: config.ticketMedio };
+  const removeLead = (id) => {
+    const lead = leadsRef.current.find((l) => l.id === id); if (!lead) return;
+    if (!window.confirm(`Eliminar a ${lead.nombre} del pipeline? No se puede deshacer.`)) return;
+    deleteLead(id);
+    pushToast(`${lead.nombre.split(' ')[0]} eliminado`, { emoji: '🗑️' });
+  };
+
+  const actions = { copy, markSent, markFollowup, markReply, setStage, dropStage, toSilence, wake, openLead, launchCycle, addCapture, patchLead, deleteLead: removeLead, ticket: config.ticketMedio };
 
   const drawerLead = drawerId ? leads.find((l) => l.id === drawerId) : null;
   const meta = NAV.find((n) => n.id === route);

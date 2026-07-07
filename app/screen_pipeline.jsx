@@ -3,7 +3,7 @@
    ══════════════════════════════════════════════════════════════════ */
 const { useState: upS, useMemo: upM } = React;
 
-function KCard({ lead, onOpen, onDragStart, onDragEnd, dragging }) {
+function KCard({ lead, onOpen, onDelete, onDragStart, onDragEnd, dragging }) {
   return (
     <div className={`kcard${dragging ? ' dragging' : ''}`} draggable
       onDragStart={(e) => onDragStart(e, lead)} onDragEnd={onDragEnd}
@@ -12,6 +12,9 @@ function KCard({ lead, onOpen, onDragStart, onDragEnd, dragging }) {
         <MaturityDot stage={lead.stage} size={14} />
         <span style={{ fontWeight: 650, fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.nombre}</span>
         {lead.teInvito && <span style={{ fontSize: 11 }}>⭐</span>}
+        <button title="Eliminar lead" onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          style={{ marginLeft: 'auto', background: 'none', border: 0, cursor: 'pointer', fontSize: 12, opacity: 0.45, padding: 2, lineHeight: 1, flexShrink: 0 }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)} onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.45)}>🗑️</button>
       </div>
       <div className="meta" style={{ marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.area} · {lead.ciudad}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
@@ -44,7 +47,7 @@ function Kanban({ leads, actions, onDropStage }) {
               <span className="pill tnum" style={{ marginLeft: 'auto', height: 19, background: 'var(--field-bg)', color: 'var(--text-3)' }}>{items.length}</span>
             </div>
             <div className="scroll-y" style={{ padding: 9, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 60 }}>
-              {items.map((l) => <KCard key={l.id} lead={l} onOpen={actions.openLead} dragging={dragId === l.id} onDragStart={onDragStart} onDragEnd={onDragEnd} />)}
+              {items.map((l) => <KCard key={l.id} lead={l} onOpen={actions.openLead} onDelete={() => actions.deleteLead(l.id)} dragging={dragId === l.id} onDragStart={onDragStart} onDragEnd={onDragEnd} />)}
               {money && items.length > 0 && (
                 <div style={{ marginTop: 2, fontSize: 11, color: 'var(--gold-bright)', textAlign: 'center', fontWeight: 600 }}>💰 {fmtEur(items.length * (window.__ticket || 50))}</div>
               )}
@@ -70,7 +73,7 @@ function Table({ leads, actions }) {
       <div className="scroll-y" style={{ maxHeight: '100%' }}>
         <table className="tbl">
           <thead><tr>
-            <th>Lead</th><th>Etapa</th><th>Temp.</th><th>Variante</th><th>Área</th><th>Últ. contacto</th>
+            <th>Lead</th><th>Etapa</th><th>Temp.</th><th>Variante</th><th>Área</th><th>Últ. contacto</th><th style={{ width: 34 }}></th>
           </tr></thead>
           <tbody>
             {leads.map((l) => (
@@ -87,6 +90,11 @@ function Table({ leads, actions }) {
                 <td><VariantBadge v={l.variante} altered={l.altered} /></td>
                 <td style={{ color: 'var(--text-2)' }}>{l.area}</td>
                 <td className="meta">{ageLabel(l.ultimoContacto)}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <button title="Eliminar lead" onClick={(e) => { e.stopPropagation(); actions.deleteLead(l.id); }}
+                    style={{ background: 'none', border: 0, cursor: 'pointer', fontSize: 13, opacity: 0.5, padding: 2 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)} onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.5)}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
