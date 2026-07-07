@@ -10,6 +10,7 @@ const NAV = [
   { id: 'lab',       emoji: '🧪', label: 'Laboratorio A/B' },
   { id: 'embudo',    emoji: '📊', label: 'Embudo & señales' },
   { id: 'captacion', emoji: '🎯', label: 'Captación' },
+  { id: 'tareas',    emoji: '✅', label: 'Tareas' },
   { id: 'config',    emoji: '⚙️', label: 'Config' },
 ];
 
@@ -84,6 +85,7 @@ function App() {
   const { cycles, addCycle, setCycles } = useCycles();
   const { notes: bitacora, addNote } = useBitacora();
   const { daily, bump } = useDaily();
+  const { tasks, addTask, toggleTask, deleteTask } = useTasks();
 
   const [route, setRoute] = uaS('dia');
   const [view, setView] = uaS('kanban');
@@ -230,6 +232,7 @@ function App() {
   };
 
   const actions = { copy, markSent, markFollowup, markReply, setStage, dropStage, toSilence, wake, openLead, launchCycle, addCapture, patchLead, deleteLead: removeLead, ticket: config.ticketMedio };
+  const taskActions = { addTask, toggleTask, deleteTask };
 
   const drawerLead = drawerId ? leads.find((l) => l.id === drawerId) : null;
   const meta = NAV.find((n) => n.id === route);
@@ -240,6 +243,7 @@ function App() {
   else if (route === 'lab') screen = <LabAB leads={leads} />;
   else if (route === 'embudo') screen = <Embudo leads={leads} bitacora={bitacora} addNote={addNote} />;
   else if (route === 'captacion') screen = <Captacion leads={leads} cycles={cycles} addCycle={addCycle} config={config} onImport={pickCSV} openPrompt={openPrompt} />;
+  else if (route === 'tareas') screen = <Tareas tasks={tasks} actions={taskActions} />;
   else if (route === 'config') screen = <Configuracion config={config} setConfig={setConfig} onImportCSV={importCSV} onImportJSON={importJSON} onExport={exportJSON} stats={{ leads: leads.length, cycles: cycles.length, messages: leads.reduce((s, l) => s + (l.messages || []).length, 0) }} />;
 
   const isPipeline = route === 'pipeline';

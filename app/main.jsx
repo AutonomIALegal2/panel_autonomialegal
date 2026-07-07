@@ -29,6 +29,7 @@ await import('./screen_lab.jsx');
 await import('./screen_embudo.jsx');
 await import('./screen_captacion.jsx');
 await import('./screen_config.jsx');
+await import('./screen_tareas.jsx');
 await import('./app.jsx');
 
 const sb = window.sb;

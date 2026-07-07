@@ -269,4 +269,33 @@ function useDaily() {
   return { daily, setDaily, bump };
 }
 
-Object.assign(window, { useConfig, useLeads, useCycles, useBitacora, useDaily, tsToDate, tsToStamp });
+/* ══════════════════════ useTasks (tareas de captación) ══════════════════════ */
+function useTasks() {
+  const [tasks, setTasksState] = uS([]);
+  uE(() => { (async () => {
+    const { data, error } = await sb.from('tasks').select('*').order('created_at', { ascending: false });
+    if (error) { flagError('Error cargando tareas: ' + error.message); return; }
+    setTasksState(data || []);
+  })(); }, []);
+  const addTask = uC((t) => {
+    const tmp = { id: 'tmp' + Math.random(), title: t.title, description: t.description || null, priority: t.priority || 'media', due_date: t.due_date || null, completed_at: null, lead_id: t.lead_id || null };
+    setTasksState((ts) => [tmp, ...ts]);
+    sb.from('tasks').insert({ title: tmp.title, description: tmp.description, priority: tmp.priority, due_date: tmp.due_date, lead_id: tmp.lead_id }).select().single()
+      .then(({ data, error }) => { if (error) flagError('No se pudo crear la tarea: ' + error.message); else if (data) setTasksState((ts) => ts.map((x) => x.id === tmp.id ? data : x)); });
+  }, []);
+  const toggleTask = uC((id) => {
+    setTasksState((ts) => {
+      const next = ts.map((x) => x.id === id ? { ...x, completed_at: x.completed_at ? null : new Date().toISOString() } : x);
+      const t = next.find((x) => x.id === id);
+      sb.from('tasks').update({ completed_at: t.completed_at }).eq('id', id).then(({ error }) => { if (error) flagError('No se pudo actualizar la tarea: ' + error.message); });
+      return next;
+    });
+  }, []);
+  const deleteTask = uC((id) => {
+    setTasksState((ts) => ts.filter((x) => x.id !== id));
+    sb.from('tasks').delete().eq('id', id).then(({ error }) => { if (error) flagError('No se pudo eliminar la tarea: ' + error.message); });
+  }, []);
+  return { tasks, addTask, toggleTask, deleteTask };
+}
+
+Object.assign(window, { useConfig, useLeads, useCycles, useBitacora, useDaily, useTasks, tsToDate, tsToStamp });
