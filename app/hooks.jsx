@@ -81,22 +81,46 @@ function leadToRow(l) {
 const msgToRow = (leadId, m) => ({ lead_id: leadId, tipo: m.type, texto_sugerido: m.suggested ?? null, texto_enviado: m.sent ?? null, enviado_en: stampToTs(m.date) });
 const evtToRow = (leadId, e) => ({ lead_id: leadId, ts: stampToTs(e.ts), kind: e.kind || 'stage', text: e.text || null });
 
+/* ── cola de escritura SERIALIZADA por lead.id ──────────────────────────
+   Dos mutaciones rápidas del MISMO lead (p.ej. mover a «oferta» y acto
+   seguido «Deshacer») se lanzaban en paralelo sin await; el orden de llegada
+   a la BD no estaba garantizado y a veces ganaba la primera → el lead se
+   quedaba en un estado que NO era el último elegido (de ahí el «Deshacer»
+   que no deshacía y el KPI «Pasta en juego» que no se descontaba).
+   Encadenando por id, la ÚLTIMA acción en el tiempo es la última en escribir. */
+const _writeQ = {};
+function enqueueWrite(id, task) {
+  const run = (_writeQ[id] || Promise.resolve()).then(task, task); // corre pase lo que pase
+  _writeQ[id] = run.finally(() => { if (_writeQ[id] === run) delete _writeQ[id]; });
+  return _writeQ[id];
+}
+
+/* ¿cambió el lead respecto al anterior? (escalares del row o nº de hijos) */
+function leadChanged(p, l) {
+  if (!p) return true;
+  if (JSON.stringify(leadToRow(p)) !== JSON.stringify(leadToRow(l))) return true;
+  return (p.messages || []).length !== (l.messages || []).length
+      || (p.events || []).length !== (l.events || []).length;
+}
+
 /* ── persistencia de un lead: escalares + resync de hijos (mensajes/eventos) ── */
-async function persistLead(lead) {
-  try {
-    const { error: e1 } = await sb.from('leads').upsert(leadToRow(lead), { onConflict: 'id' });
-    if (e1) throw e1;
-    await sb.from('lead_messages').delete().eq('lead_id', lead.id);
-    if (lead.messages && lead.messages.length) {
-      const { error } = await sb.from('lead_messages').insert(lead.messages.map((m) => msgToRow(lead.id, m)));
-      if (error) throw error;
-    }
-    await sb.from('lead_events').delete().eq('lead_id', lead.id);
-    if (lead.events && lead.events.length) {
-      const { error } = await sb.from('lead_events').insert(lead.events.map((e) => evtToRow(lead.id, e)));
-      if (error) throw error;
-    }
-  } catch (e) { flagError('No se pudo guardar ' + (lead.nombre || lead.id) + ': ' + (e.message || e)); }
+function persistLead(lead) {
+  return enqueueWrite(lead.id, async () => {
+    try {
+      const { error: e1 } = await sb.from('leads').upsert(leadToRow(lead), { onConflict: 'id' });
+      if (e1) throw e1;
+      await sb.from('lead_messages').delete().eq('lead_id', lead.id);
+      if (lead.messages && lead.messages.length) {
+        const { error } = await sb.from('lead_messages').insert(lead.messages.map((m) => msgToRow(lead.id, m)));
+        if (error) throw error;
+      }
+      await sb.from('lead_events').delete().eq('lead_id', lead.id);
+      if (lead.events && lead.events.length) {
+        const { error } = await sb.from('lead_events').insert(lead.events.map((e) => evtToRow(lead.id, e)));
+        if (error) throw error;
+      }
+    } catch (e) { flagError('No se pudo guardar ' + (lead.nombre || lead.id) + ': ' + (e.message || e)); }
+  });
 }
 
 /* ══════════════════════ useLeads ══════════════════════ */
@@ -183,18 +207,13 @@ function useLeads() {
   const replaceAll = uC((next) => {
     const prev = leadsRef.current;
     setLeads(next);
-    (async () => {
-      try {
-        const { error } = await sb.from('leads').upsert(next.map(leadToRow), { onConflict: 'id' });
-        if (error) throw error;
-        const prevById = Object.fromEntries((prev || []).map((l) => [l.id, l]));
-        for (const l of next) {
-          const p = prevById[l.id];
-          const changed = !p || (p.messages || []).length !== (l.messages || []).length || (p.events || []).length !== (l.events || []).length;
-          if (changed) await persistLead(l);
-        }
-      } catch (e) { flagError('Error guardando el lote: ' + (e.message || e)); }
-    })();
+    // Persistimos SOLO los leads que cambiaron, cada uno por la MISMA cola
+    // serializada de persistLead (nada de upsert masivo suelto que compita con
+    // las escrituras por-lead: esa carrera era la que rompía el «Deshacer»).
+    const prevById = Object.fromEntries((prev || []).map((l) => [l.id, l]));
+    for (const l of next) {
+      if (leadChanged(prevById[l.id], l)) persistLead(l);
+    }
   }, [setLeads]);
 
   return { leads, setLeads, patchLead, setStage, addMessage, addCapture, addLead, deleteLead, replaceAll };
