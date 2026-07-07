@@ -103,8 +103,9 @@ function AmmoBanner({ ammo, onLaunch }) {
   );
 }
 
-function MiDia({ leads, config, actions, daily, ammo }) {
+function MiDia({ leads, config, actions, daily, ammo, tasks, taskActions }) {
   const q = queues(leads);
+  const tareasHoy = (tasks || []).filter((t) => !t.completed_at && t.due_date && t.due_date <= PDATA.TODAY).sort((a, b) => (a.due_date < b.due_date ? -1 : 1));
   const money = pipelineMoney(leads, config.ticketMedio);
   const rs = replyStats(leads);
   const objetivo = config.objetivoDiario;
@@ -134,7 +135,7 @@ function MiDia({ leads, config, actions, daily, ammo }) {
     return () => window.removeEventListener('keydown', h);
   }, [activeId, leads]);
 
-  const empty = !q.enviarAhora.length && !q.followupsHoy.length && !q.esperando.length && !q.neveraDespierta.length;
+  const empty = !q.enviarAhora.length && !q.followupsHoy.length && !q.esperando.length && !q.neveraDespierta.length && !tareasHoy.length;
 
   return (
     <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 960, margin: '0 auto' }}>
@@ -173,6 +174,23 @@ function MiDia({ leads, config, actions, daily, ammo }) {
       </div>
 
       <AmmoBanner ammo={ammo} onLaunch={actions.launchCycle} />
+
+      {/* ── Tareas para hoy ── */}
+      {tareasHoy.length > 0 && (
+        <SectionCard title="Tareas para hoy" emoji="✅" count={tareasHoy.length}>
+          {tareasHoy.map((t) => {
+            const overdue = t.due_date < PDATA.TODAY;
+            return (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 15px', borderBottom: '1px solid var(--line)' }}>
+                <button onClick={() => taskActions.toggleTask(t.id)} title="Marcar hecha"
+                  style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid var(--line-strong)', background: 'transparent', cursor: 'pointer', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: 'var(--text)' }}>{t.title}</div>
+                {overdue && <span className="pill" style={{ height: 20, color: 'var(--danger)', background: 'var(--danger-bg)' }}>⚠️ vencida</span>}
+              </div>
+            );
+          })}
+        </SectionCard>
+      )}
 
       {/* ── Filtro de acciones ── */}
       <div className="seg" style={{ alignSelf: 'flex-start' }}>

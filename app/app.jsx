@@ -266,7 +266,7 @@ function App() {
   const meta = NAV.find((n) => n.id === route);
 
   let screen;
-  if (route === 'dia') screen = <MiDia leads={leads} config={config} actions={actions} daily={daily} ammo={ammo} />;
+  if (route === 'dia') screen = <MiDia leads={leads} config={config} actions={actions} daily={daily} ammo={ammo} tasks={tasks} taskActions={taskActions} />;
   else if (route === 'pipeline') screen = <Pipeline leads={leads} actions={actions} view={view} setView={setView} />;
   else if (route === 'lab') screen = <LabAB leads={leads} />;
   else if (route === 'embudo') screen = <Embudo leads={leads} bitacora={bitacora} addNote={addNote} />;
