@@ -99,7 +99,8 @@ function LeadDrawer({ lead, actions, onClose }) {
   const [notes, setNotes] = ulS(lead.notas || '');
   const [askReply, setAskReply] = ulS(false);
   const [replyType, setReplyType] = ulS('POSITIVA');
-  ulE(() => { setNotes(lead.notas || ''); setAskReply(false); }, [lead.id]);
+  const [replyFecha, setReplyFecha] = ulS(PDATA.TODAY);
+  ulE(() => { setNotes(lead.notas || ''); setAskReply(false); setReplyFecha(PDATA.TODAY); }, [lead.id]);
 
   const e = PDATA.etapa(lead.stage);
   const nextStages = PDATA.ETAPA_ORDER.slice(PDATA.ETAPA_ORDER.indexOf(lead.stage) + 1);
@@ -145,9 +146,13 @@ function LeadDrawer({ lead, actions, onClose }) {
                 </button>
               ))}
             </div>
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginBottom: 5 }}>Fecha en que respondió</div>
+              <input type="date" className="input" value={replyFecha} max={PDATA.TODAY} onChange={(e) => setReplyFecha(e.target.value)} style={{ height: 32 }} />
+            </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10, justifyContent: 'flex-end' }}>
               <Button size="sm" variant="ghost" onClick={() => setAskReply(false)}>Cancelar</Button>
-              <Button size="sm" variant="gold" icon="check" onClick={() => { actions.markReply(lead, replyType); setAskReply(false); }}>Registrar respuesta</Button>
+              <Button size="sm" variant="gold" icon="check" onClick={() => { actions.markReply(lead, replyType, replyFecha); setAskReply(false); }}>Registrar respuesta</Button>
             </div>
           </div>
         ) : (

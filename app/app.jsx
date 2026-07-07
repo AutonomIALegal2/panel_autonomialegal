@@ -59,15 +59,20 @@ function BottomNav({ route, go }) {
 
 function ReplyModal({ lead, onClose, onConfirm }) {
   const [type, setType] = uaS('POSITIVA');
+  const [fecha, setFecha] = uaS(PDATA.TODAY);
   return (
-    <Modal title={`Respuesta de ${lead.nombre.split(' ')[0]}`} subtitle="Registrar el tipo de respuesta es obligatorio." onClose={onClose} width={420}
-      footer={<><Button variant="ghost" onClick={onClose}>Cancelar</Button><Button variant="gold" icon="check" onClick={() => { onConfirm(type); onClose(); }}>Registrar</Button></>}>
+    <Modal title={`Respuesta de ${lead.nombre.split(' ')[0]}`} subtitle="Registrar el tipo de respuesta y la fecha es obligatorio." onClose={onClose} width={420}
+      footer={<><Button variant="ghost" onClick={onClose}>Cancelar</Button><Button variant="gold" icon="check" onClick={() => { onConfirm(type, fecha); onClose(); }}>Registrar</Button></>}>
       <div className="seg" style={{ width: '100%' }}>
         {['POSITIVA', 'NEUTRA', 'NEGATIVA'].map((rt) => (
           <button key={rt} className={`seg-btn${type === rt ? ' active' : ''}`} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setType(rt)}>
             {rt === 'POSITIVA' ? '🎣 ' : rt === 'NEUTRA' ? '😐 ' : '🙅 '}{rt[0] + rt.slice(1).toLowerCase()}
           </button>
         ))}
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 5 }}>Fecha en que respondió</div>
+        <input type="date" className="input" value={fecha} max={PDATA.TODAY} onChange={(e) => setFecha(e.target.value)} style={{ height: 34 }} />
       </div>
     </Modal>
   );
@@ -135,12 +140,13 @@ function App() {
     pushToast(`FU ${fi}/3 enviado a ${lead.nombre.split(' ')[0]}`, { emoji: '↩️', undo: prev });
   };
 
-  const markReply = (lead, type) => {
+  const markReply = (lead, type, fecha) => {
     const prev = leadsRef.current;
+    const dia = fecha || PDATA.TODAY;
     patchLead(lead.id, (l) => ({
-      stage: 'respondio', replyType: type, repliedAt: PDATA.TODAY,
+      stage: 'respondio', replyType: type, repliedAt: dia,
       qualif: l.qualif || { size: 'Por cualificar', crm: '—', expedientes: '—', frustracion: '—' },
-      events: [{ ts: nowTs(), kind: 'reply', text: 'Respuesta ' + type.toLowerCase() }, ...(l.events || [])],
+      events: [{ ts: nowTs(), kind: 'reply', text: 'Respuesta ' + type.toLowerCase() + (dia !== PDATA.TODAY ? ` · ${dia}` : '') }, ...(l.events || [])],
     }));
     if (type === 'POSITIVA') { pushToast('¡Ha picado! 🎣', { emoji: '🎣', undo: prev }); }
     else pushToast(`Respuesta registrada (${type.toLowerCase()})`, { emoji: '💬', undo: prev });
@@ -261,7 +267,7 @@ function App() {
 
       {drawerLead && <LeadDrawer lead={drawerLead} actions={actions} onClose={() => setDrawerId(null)} />}
       {promptKind && <CycleModal kind={promptKind} onClose={() => setPromptKind(null)} />}
-      {pendingReply && <ReplyModal lead={pendingReply} onClose={() => setPendingReply(null)} onConfirm={(type) => markReply(pendingReply, type)} />}
+      {pendingReply && <ReplyModal lead={pendingReply} onClose={() => setPendingReply(null)} onConfirm={(type, fecha) => markReply(pendingReply, type, fecha)} />}
       <Toaster toasts={toasts} dismiss={dismiss} />
 
       {/* Tweaks: knobs rápidos (fuente de verdad = config) */}
