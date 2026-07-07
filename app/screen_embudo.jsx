@@ -107,6 +107,7 @@ function Embudo({ leads, bitacora, addNote }) {
   const byStar = cutBy(leads, (l) => l.teInvito ? '⭐ Me invitó' : 'Conexión en frío');
   const byDay = cutBy(leads, (l) => l.m1Date ? WEEKDAYS[new Date(l.m1Date + 'T12:00:00').getDay()] : null);
   const byPerfil = cutBy(leads, (l) => (l.perfil || '').split(' · ')[0]);
+  const byOrigen = cutBy(leads, (l) => { const o = origenMeta(l.origen || 'linkedin'); return `${o.emoji} ${o.label}`; });
 
   return (
     <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1000, margin: '0 auto' }}>
@@ -116,6 +117,7 @@ function Embudo({ leads, bitacora, addNote }) {
         <span className="meta">línea dorada = benchmark 20% (Hormozi)</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 14 }}>
+        <SignalCut title="Por origen" rows={byOrigen} />
         <SignalCut title="Por temperatura" rows={byTemp} />
         <SignalCut title="Por área" rows={byArea} />
         <SignalCut title="Por invitación (⭐)" rows={byStar} />

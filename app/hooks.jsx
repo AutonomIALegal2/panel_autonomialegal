@@ -61,6 +61,7 @@ function rowToLead(r, kids) {
     perfil: r.perfil, area: r.area, temperatura: r.temperatura, framework: r.framework, variante: r.variante,
     angulo: r.angulo, ultimoContacto: tsToDate(r.ultimo_contacto), teInvito: r.te_invito, conectoEl: tsToDate(r.conecto_el),
     url: r.url, mensaje: r.mensaje, stage: r.stage, fuCount: r.fu_count, replyType: r.reply_type,
+    origen: r.origen || 'linkedin', origenDetalle: r.origen_detalle,
     repliedAt: tsToDate(r.replied_at), m1Date: tsToDate(r.m1_date), altered: r.altered, qualif: r.qualif,
     nextStep: r.next_step, snoozeUntil: tsToDate(r.snooze_until), lostReason: r.lost_reason, notas: r.notas,
     messages: kids.msgs, events: kids.evts, captures: kids.caps,
@@ -72,6 +73,7 @@ function leadToRow(l) {
     perfil: l.perfil || null, area: l.area || null, temperatura: l.temperatura || null, framework: l.framework || null, variante: l.variante || null,
     angulo: l.angulo || null, ultimo_contacto: dateOrNull(l.ultimoContacto), te_invito: !!l.teInvito, conecto_el: dateOrNull(l.conectoEl),
     url: l.url || null, mensaje: l.mensaje || null, stage: l.stage || 'pendiente', fu_count: l.fuCount || 0, reply_type: l.replyType || null,
+    origen: l.origen || 'linkedin', origen_detalle: l.origenDetalle || null,
     replied_at: dateOrNull(l.repliedAt), m1_date: dateOrNull(l.m1Date), altered: !!l.altered, qualif: l.qualif || null,
     next_step: l.nextStep || null, snooze_until: dateOrNull(l.snoozeUntil), lost_reason: l.lostReason || null, notas: l.notas || null,
   };

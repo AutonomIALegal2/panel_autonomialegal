@@ -205,6 +205,7 @@ function LeadDrawer({ lead, actions, onClose }) {
             </div>
             <div>
               <div className="rail-lbl" style={{ marginBottom: 6 }}>Datos</div>
+              <QualRow icon="target" label="Origen" value={`${origenMeta(lead.origen || 'linkedin').emoji} ${origenMeta(lead.origen || 'linkedin').label}${lead.origenDetalle ? ' · ' + lead.origenDetalle : ''}`} />
               <QualRow icon="mapPin" label="Ciudad" value={lead.ciudad ? `${lead.ciudad}, ${lead.pais}` : lead.pais} />
               <QualRow icon="scale" label="Área" value={lead.area} />
               <QualRow icon="calendar" label="Conectasteis" value={fmtDateY(lead.conectoEl)} />

@@ -92,6 +92,7 @@ function App() {
   const [drawerId, setDrawerId] = uaS(null);
   const [promptKind, setPromptKind] = uaS(null);
   const [pendingReply, setPendingReply] = uaS(null);
+  const [showNewLead, setShowNewLead] = uaS(false);
   const [toasts, setToasts] = uaS([]);
 
   const leadsRef = uaR(leads); uaE(() => { leadsRef.current = leads; }, [leads]);
@@ -224,6 +225,33 @@ function App() {
     return () => window.removeEventListener('keydown', h);
   }, [toasts]);
 
+  /* crear lead a mano (web · cercanos · charla · referidos) */
+  const createLead = (f) => {
+    let id;
+    const m = (f.contacto || '').match(/linkedin\.com\/in\/([^/?#]+)/i);
+    if (m) id = decodeURIComponent(m[1]).toLowerCase();
+    else id = f.nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + Date.now().toString(36);
+    if (leadsRef.current.some((l) => l.id === id)) { pushToast('Ese lead ya existe (mismo perfil)', { emoji: '🔁' }); return; }
+    const isUrl = /^https?:\/\//i.test(f.contacto || '');
+    const beyond = PDATA.ETAPA_ORDER.indexOf(f.stage) > PDATA.ETAPA_ORDER.indexOf('respondio');
+    const om = origenMeta(f.origen);
+    const events = [{ ts: nowTs(), kind: 'import', text: `Añadido a mano · ${om.emoji} ${om.label}${f.origenDetalle ? ' · ' + f.origenDetalle : ''}` }];
+    if (beyond) events.unshift({ ts: nowTs(), kind: 'reply', text: 'Respuesta positiva (registrada al crear)' });
+    addLead({
+      id, prioridad: 1, nombre: f.nombre, tipo: null, pais: 'España', ciudad: f.ciudad,
+      perfil: null, area: f.area, temperatura: f.temperatura, framework: null, variante: null, angulo: null,
+      origen: f.origen, origenDetalle: f.origenDetalle,
+      ultimoContacto: PDATA.TODAY, teInvito: false, conectoEl: null,
+      url: isUrl ? f.contacto : null, mensaje: f.mensaje || null, stage: f.stage,
+      fuCount: 0, replyType: beyond ? 'POSITIVA' : null, repliedAt: beyond ? PDATA.TODAY : null,
+      m1Date: f.stage !== 'pendiente' ? PDATA.TODAY : null, altered: false,
+      qualif: null, nextStep: null, snoozeUntil: null, lostReason: null,
+      notas: !isUrl && f.contacto ? `Contacto: ${f.contacto}` : '',
+      messages: [], events, captures: [],
+    });
+    pushToast(`${f.nombre.split(' ')[0]} añadido (${om.emoji} ${om.label})`, { emoji: '➕' });
+  };
+
   const removeLead = (id) => {
     const lead = leadsRef.current.find((l) => l.id === id); if (!lead) return;
     if (!window.confirm(`Eliminar a ${lead.nombre} del pipeline? No se puede deshacer.`)) return;
@@ -231,7 +259,7 @@ function App() {
     pushToast(`${lead.nombre.split(' ')[0]} eliminado`, { emoji: '🗑️' });
   };
 
-  const actions = { copy, markSent, markFollowup, markReply, setStage, dropStage, toSilence, wake, openLead, launchCycle, addCapture, patchLead, deleteLead: removeLead, ticket: config.ticketMedio };
+  const actions = { copy, markSent, markFollowup, markReply, setStage, dropStage, toSilence, wake, openLead, launchCycle, addCapture, patchLead, deleteLead: removeLead, openNewLead: () => setShowNewLead(true), ticket: config.ticketMedio };
   const taskActions = { addTask, toggleTask, deleteTask };
 
   const drawerLead = drawerId ? leads.find((l) => l.id === drawerId) : null;
@@ -272,6 +300,7 @@ function App() {
       {drawerLead && <LeadDrawer lead={drawerLead} actions={actions} onClose={() => setDrawerId(null)} />}
       {promptKind && <CycleModal kind={promptKind} onClose={() => setPromptKind(null)} />}
       {pendingReply && <ReplyModal lead={pendingReply} onClose={() => setPendingReply(null)} onConfirm={(type, fecha) => markReply(pendingReply, type, fecha)} />}
+      {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} onCreate={createLead} />}
       <Toaster toasts={toasts} dismiss={dismiss} />
 
       {/* Tweaks: knobs rápidos (fuente de verdad = config) */}
