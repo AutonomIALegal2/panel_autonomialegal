@@ -109,7 +109,7 @@ function Pipeline({ leads, actions, view, setView }) {
     if (fVar && l.variante !== fVar) return false;
     if (fArea && l.area !== fArea) return false;
     if (fStar && !l.teInvito) return false;
-    if (q && !(l.nombre.toLowerCase().includes(q.toLowerCase()) || l.area.toLowerCase().includes(q.toLowerCase()) || l.ciudad.toLowerCase().includes(q.toLowerCase()))) return false;
+    if (q && !((l.nombre || '').toLowerCase().includes(q.toLowerCase()) || (l.area || '').toLowerCase().includes(q.toLowerCase()) || (l.ciudad || '').toLowerCase().includes(q.toLowerCase()))) return false;
     return true;
   }), [leads, q, fTemp, fVar, fArea, fStar]);
 

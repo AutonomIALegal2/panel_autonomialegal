@@ -122,7 +122,7 @@ function LeadDrawer({ lead, actions, onClose }) {
             </a>
             {lead.teInvito && <StarBadge />}
           </div>
-          <div className="meta" style={{ marginTop: 4 }}>{lead.perfil} · {lead.ciudad}</div>
+          <div className="meta" style={{ marginTop: 4 }}>{lead.perfil || '—'}{lead.ciudad ? ` · ${lead.ciudad}` : ''}</div>
           <div style={{ display: 'flex', gap: 6, marginTop: 9, flexWrap: 'wrap' }}>
             <StageBadge stage={lead.stage} />
             <TempBadge id={lead.temperatura} size="sm" />
@@ -200,10 +200,10 @@ function LeadDrawer({ lead, actions, onClose }) {
             </div>
             <div>
               <div className="rail-lbl" style={{ marginBottom: 6 }}>Datos</div>
-              <QualRow icon="mapPin" label="Ciudad" value={`${lead.ciudad}, ${lead.pais}`} />
+              <QualRow icon="mapPin" label="Ciudad" value={lead.ciudad ? `${lead.ciudad}, ${lead.pais}` : lead.pais} />
               <QualRow icon="scale" label="Área" value={lead.area} />
               <QualRow icon="calendar" label="Conectasteis" value={fmtDateY(lead.conectoEl)} />
-              <QualRow icon="target" label="Prioridad" value={'★'.repeat(4 - lead.prioridad) || '—'} />
+              <QualRow icon="target" label="Prioridad" value={'★'.repeat(Math.max(0, Math.min(3, 4 - (lead.prioridad || 3)))) || `#${lead.prioridad}`} />
             </div>
             <div>
               <div className="rail-lbl" style={{ marginBottom: 8 }}>Notas</div>
