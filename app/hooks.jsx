@@ -227,10 +227,14 @@ const CONFIG_DEFAULT = { objetivoDiario: 40, ticketMedio: 50, umbralMunicion: 3,
 const cfgToRow = (c) => ({ id: 1, objetivo_diario: c.objetivoDiario, ticket_medio: c.ticketMedio, umbral_municion: c.umbralMunicion, bumps: [...c.bumps, ...c.bumpsB], humor: c.humor, theme: c.theme });
 const rowToCfg = (r) => {
   const arr = (r.bumps && r.bumps.length) ? r.bumps : [];
+  const bumpsB = arr.length >= 6 ? arr.slice(3, 6) : window.PDATA.BUMPS_B_DEFAULT.slice();
+  // Migración suave (8-jul): si la BD guardó la plantilla B1 antigua («…domado?»),
+  // se sustituye por la redacción nueva de Pablo sin tocar sus otras ediciones.
+  if (bumpsB[0] && bumpsB[0].includes('domado')) bumpsB[0] = window.PDATA.BUMPS_B_DEFAULT[0];
   return {
     objetivoDiario: r.objetivo_diario, ticketMedio: Number(r.ticket_medio), umbralMunicion: r.umbral_municion,
     bumps: arr.length >= 3 ? arr.slice(0, 3) : window.PDATA.BUMPS_DEFAULT.slice(),
-    bumpsB: arr.length >= 6 ? arr.slice(3, 6) : window.PDATA.BUMPS_B_DEFAULT.slice(),
+    bumpsB,
     humor: r.humor, theme: r.theme,
   };
 };

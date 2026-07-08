@@ -71,7 +71,7 @@
      (prueba social + dolor) · B3 = cierre con pregunta binaria en vez de
      despedida. La A es suave/conversacional; la B entra por el dolor. */
   const BUMPS_B_DEFAULT = [
-    'Te dejo un dato rápido, {f}: la mayoría de despachos que conozco pierde algún cliente al año por contactar tarde — no por mal trabajo, por el caos del día a día.\n\nOs pasa también, o lo tenéis domado?',
+    'Te dejo un dato rápido, {f}:\n\nLa mayoría de despachos que conozco pierde algún cliente al año por contactar tarde.\nNo por mal trabajo, por el caos del día a día.\n\nOs pasa también, o lo tenéis controlado?',
     '{f}, esta semana un laboralista me contaba que llevaba los plazos entre la agenda y varios excels — y que el miedo a que se le escapara uno no se lo quitaba nadie.\n\nMe quedé pensando: en tu despacho eso cómo lo lleváis?',
     'Cierro el hilo, {f}, que no quiero ser pesado 🙂\n\nSolo por curiosidad antes de irme: el control de plazos y expedientes lo dais por resuelto en el despacho, o es de esas cosas de «ya se mirará»?',
   ];
