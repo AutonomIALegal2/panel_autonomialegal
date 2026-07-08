@@ -65,12 +65,14 @@
     '{f}, te dejo esto por aquí arriba por si se quedó abajo la conversación 🙌\n\nMe interesa de verdad cómo lo lleváis: los expedientes y los plazos los tenéis en un mismo sitio, o cada cosa por su lado?',
     'Cierro el hilo por no insistir, {f}. Si en algún momento quieres ver cómo tener plazos y expedientes bajo control, aquí me tienes. Un abrazo!',
   ];
-  /* Serie B del test A/B de follow-ups (Hormozi): B1 = 9-word directo al deseo ·
-     B2 = dolor concreto + pregunta fácil de contestar (sí/no) · B3 = cierre con
-     pregunta binaria en vez de despedida. La A es suave/conversacional; la B, directa. */
+  /* Serie B del test A/B de follow-ups: DIRECTA pero sin presuponer interés
+     (son leads que NO respondieron al M1 — nada de «sigues queriendo…»).
+     B1 = dato de dolor + pregunta fácil · B2 = historia real de un compañero
+     (prueba social + dolor) · B3 = cierre con pregunta binaria en vez de
+     despedida. La A es suave/conversacional; la B entra por el dolor. */
   const BUMPS_B_DEFAULT = [
-    '{f}! Sigues queriendo tener los expedientes y plazos del despacho en un solo sitio?',
-    'Te dejo un dato, {f}: la mayoría de despachos con los que hablo pierde algún cliente al año por contactar tarde — no por mal trabajo, por puro caos del día a día.\n\nOs ha pasado alguna vez?',
+    'Te dejo un dato rápido, {f}: la mayoría de despachos que conozco pierde algún cliente al año por contactar tarde — no por mal trabajo, por el caos del día a día.\n\nOs pasa también, o lo tenéis domado?',
+    '{f}, esta semana un laboralista me contaba que llevaba los plazos entre la agenda y varios excels — y que el miedo a que se le escapara uno no se lo quitaba nadie.\n\nMe quedé pensando: en tu despacho eso cómo lo lleváis?',
     'Cierro el hilo, {f}, que no quiero ser pesado 🙂\n\nSolo por curiosidad antes de irme: el control de plazos y expedientes lo dais por resuelto en el despacho, o es de esas cosas de «ya se mirará»?',
   ];
   const fillBump = (tpl, f) => tpl.replace(/\{f\}/g, f);
