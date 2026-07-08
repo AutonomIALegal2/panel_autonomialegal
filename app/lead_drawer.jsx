@@ -104,7 +104,7 @@ function LeadDrawer({ lead, actions, onClose }) {
 
   const e = PDATA.etapa(lead.stage);
   const nextStages = PDATA.ETAPA_ORDER.slice(PDATA.ETAPA_ORDER.indexOf(lead.stage) + 1);
-  const canReply = lead.stage === 'm1' || lead.stage === 'pendiente';
+  const canReply = ['pendiente', 'm1', 'fu1', 'fu2', 'fu3'].includes(lead.stage);
 
   const doStage = (stage) => {
     if (stage === 'respondio') { setAskReply(true); return; }

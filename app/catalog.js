@@ -25,6 +25,9 @@
   const ETAPAS = [
     { id: 'pendiente', name: 'Pendiente',       short: 'Pendiente',  color: 'var(--st-pend)',   emoji: '🌱' },
     { id: 'm1',        name: 'M1 enviado',       short: 'M1',         color: 'var(--st-m1)',     emoji: '🌿' },
+    { id: 'fu1',       name: 'FU1 enviado',      short: 'FU1',        color: 'var(--st-m1)',     emoji: '↩️' },
+    { id: 'fu2',       name: 'FU2 enviado',      short: 'FU2',        color: 'var(--st-m1)',     emoji: '↩️' },
+    { id: 'fu3',       name: 'FU3 enviado',      short: 'FU3',        color: 'var(--st-m1)',     emoji: '↩️' },
     { id: 'respondio', name: 'Respondió',        short: 'Respondió',  color: 'var(--st-reply)',  emoji: '🌿' },
     { id: 'oferta',    name: 'Oferta enviada',   short: 'Oferta',     color: 'var(--st-oferta)', emoji: '🪴' },
     { id: 'acceso',    name: 'Acceso aceptado',  short: 'Acceso',     color: 'var(--st-acceso)', emoji: '🪴' },
@@ -35,7 +38,7 @@
     { id: 'nevera',    name: 'Nevera',           short: 'Nevera',     color: 'var(--st-nevera)', emoji: '🧊', terminal: true },
     { id: 'silencio',  name: 'Silencio cerrado', short: 'Silencio',   color: 'var(--st-silencio)',emoji: '🔇', terminal: true },
   ];
-  const ETAPA_ORDER = ['pendiente','m1','respondio','oferta','acceso','trial','llamada','cliente'];
+  const ETAPA_ORDER = ['pendiente','m1','fu1','fu2','fu3','respondio','oferta','acceso','trial','llamada','cliente'];
 
   const TEMPS = [
     { id: 'CALIENTE', label: 'Caliente', emoji: '🔥', color: 'var(--hot)',  bg: 'var(--hot-bg)',  fw: 'A' },

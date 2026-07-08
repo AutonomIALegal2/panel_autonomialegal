@@ -4,7 +4,9 @@
    ══════════════════════════════════════════════════════════════════ */
 
 /* etapas que implican que se envió el M1 */
-const SENT_STAGES = new Set(['m1', 'respondio', 'oferta', 'acceso', 'trial', 'llamada', 'cliente', 'silencio', 'nevera', 'perdido']);
+const SENT_STAGES = new Set(['m1', 'fu1', 'fu2', 'fu3', 'respondio', 'oferta', 'acceso', 'trial', 'llamada', 'cliente', 'silencio', 'nevera', 'perdido']);
+/* etapas desde las que aún se hace seguimiento (M1 sin FU, o con FU1/FU2 enviados) */
+const FOLLOWUP_STAGES = new Set(['m1', 'fu1', 'fu2']);
 const RESPONDED_STAGES = new Set(['respondio', 'oferta', 'acceso', 'trial', 'llamada', 'cliente']);
 // avanzó MÁS ALLÁ de "respondió" → implica respuesta positiva (NO incluye 'respondio', que depende de reply_type)
 const ADVANCED_STAGES = new Set(['oferta', 'acceso', 'trial', 'llamada', 'cliente']);
@@ -24,13 +26,14 @@ function queues(leads) {
   const fuDue = (l) => daysSinceTouch(l.ultimoContacto) >= FU_GAPS[Math.min(2, l.fuCount || 0)];
   const enviarAhora = leads.filter((l) => l.stage === 'pendiente')
     .sort((a, b) => a.prioridad - b.prioridad || (a.teInvito === b.teInvito ? 0 : a.teInvito ? -1 : 1));
-  const followupsHoy = leads.filter((l) => l.stage === 'm1' && (l.fuCount || 0) < 3 && fuDue(l))
+  const followupsHoy = leads.filter((l) => FOLLOWUP_STAGES.has(l.stage) && (l.fuCount || 0) < 3 && fuDue(l))
     .sort((a, b) => (a.fuCount || 0) - (b.fuCount || 0) || daysFromToday(a.ultimoContacto) - daysFromToday(b.ultimoContacto));
   const esperando = leads.filter((l) => l.stage === 'respondio' && !l.nextStep)
     .sort((a, b) => daysFromToday(a.repliedAt) - daysFromToday(b.repliedAt));
   const neveraDespierta = leads.filter((l) => l.stage === 'nevera' && l.snoozeUntil && daysFromToday(l.snoozeUntil) <= 0);
   // FU3 vencido: mandó FU3 y pasó ≥1 día sin respuesta → sugerir silencio cerrado
-  const fu3Vencidos = leads.filter((l) => l.stage === 'm1' && (l.fuCount || 0) >= 3 && daysFromToday(l.ultimoContacto) <= -1);
+  // (cubre también leads históricos que quedaran en m1 con fuCount=3, pre-etapas fu*)
+  const fu3Vencidos = leads.filter((l) => (l.stage === 'fu3' || (l.stage === 'm1' && (l.fuCount || 0) >= 3)) && daysFromToday(l.ultimoContacto) <= -1);
   return { enviarAhora, followupsHoy, esperando, neveraDespierta, fu3Vencidos };
 }
 
@@ -170,7 +173,7 @@ function cutBy(leads, keyFn) {
 }
 
 Object.assign(window, {
-  SENT_STAGES, RESPONDED_STAGES, ADVANCED_STAGES, PIPELINE_MONEY_STAGES,
+  SENT_STAGES, FOLLOWUP_STAGES, RESPONDED_STAGES, ADVANCED_STAGES, PIPELINE_MONEY_STAGES,
   pipelineMoney, queues, replyStats, ammoStatus, abStats, fuAbStats, touchBreakdown,
   FUNNEL_STEPS, funnel, reached, cutBy,
 });

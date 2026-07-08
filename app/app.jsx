@@ -139,21 +139,25 @@ function App() {
     // del mensaje ('FU1·A' / 'FU1·B') → lead_messages.tipo, sin tocar esquema.
     const v = variant === 'B' ? 'B' : 'A';
     patchLead(lead.id, (l) => ({
+      // El lead avanza a su etapa de seguimiento: m1 → fu1 → fu2 → fu3.
+      stage: `fu${Math.min(3, fi)}`,
       fuCount: fi, ultimoContacto: PDATA.TODAY,
       messages: [...(l.messages || []), { id: 'm' + Date.now(), type: `FU${fi}·${v}`, suggested: text, sent: text, altered: false, date: nowTs() }],
       events: [{ ts: nowTs(), kind: 'fu', text: `Follow-up ${fi}/3 enviado · formato ${v}` }, ...(l.events || [])],
     }));
-    pushToast(`FU ${fi}/3 (formato ${v}) enviado a ${lead.nombre.split(' ')[0]}`, { emoji: '↩️', undo: prev });
+    pushToast(`FU ${fi}/3 (formato ${v}) enviado a ${lead.nombre.split(' ')[0]} → etapa FU${Math.min(3, fi)}`, { emoji: '↩️', undo: prev });
   };
 
   const markReply = (lead, type, fecha) => {
     const prev = leadsRef.current;
     const dia = fecha || PDATA.TODAY;
-    // ¿Tras qué toque respondió? Se deriva del historial: el último FU enviado
-    // (con su formato A/B) — o «a la 1ª» si respondió al M1 sin follow-ups.
+    // ¿Tras qué toque respondió? Doble fuente, automático (sin marcar nada a mano):
+    // la etapa actual (m1/fu1/fu2/fu3) dice el toque, y el historial de mensajes
+    // aporta el formato A/B del último FU enviado.
     const fus = (lead.messages || []).filter((m) => /^FU\d/.test(String(m.type)));
     const lastFu = fus[fus.length - 1];
-    const tras = lastFu ? ` · tras ${lastFu.type}` : ' · a la 1ª (M1)';
+    const touchByStage = { m1: 'M1', fu1: 'FU1', fu2: 'FU2', fu3: 'FU3' }[lead.stage];
+    const tras = lastFu ? ` · tras ${lastFu.type}` : (touchByStage && touchByStage !== 'M1' ? ` · tras ${touchByStage}` : ' · a la 1ª (M1)');
     patchLead(lead.id, (l) => ({
       stage: 'respondio', replyType: type, repliedAt: dia,
       qualif: l.qualif || { size: 'Por cualificar', crm: '—', expedientes: '—', frustracion: '—' },

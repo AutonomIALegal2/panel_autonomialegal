@@ -147,7 +147,18 @@ function useLeads() {
     (cr.data || []).forEach((c) => K(c.lead_id).caps.push(mapCap(c)));
     // mensajes por fecha ascendente para la ficha
     Object.values(kids).forEach((k) => k.msgs.sort((a, b) => (a.date < b.date ? -1 : 1)));
-    const assembled = (lr.data || []).map((r) => rowToLead(r, kids[r.id] || { msgs: [], evts: [], caps: [] }));
+    let assembled = (lr.data || []).map((r) => rowToLead(r, kids[r.id] || { msgs: [], evts: [], caps: [] }));
+    // Migración one-shot (8-jul, etapas fu1/fu2/fu3): los leads que ya tenían
+    // follow-ups enviados vivían en 'm1' con fuCount>0 → se recolocan en su
+    // etapa FU real y se persisten. Tras la primera carga es un no-op.
+    const toMigrate = assembled.filter((l) => l.stage === 'm1' && (l.fuCount || 0) > 0);
+    if (toMigrate.length) {
+      assembled = assembled.map((l) => (l.stage === 'm1' && (l.fuCount || 0) > 0)
+        ? { ...l, stage: `fu${Math.min(3, l.fuCount)}` } : l);
+      assembled.filter((l) => /^fu\d$/.test(l.stage)).forEach((l) => {
+        if (toMigrate.find((m) => m.id === l.id)) persistLead(l);
+      });
+    }
     setLeads(assembled);
   }
 
