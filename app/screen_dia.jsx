@@ -22,15 +22,20 @@ function LeadLine({ lead, onOpen }) {
 }
 
 /* Tarjeta de mensaje copiable (M1 o follow-up) */
-function MessageCard({ lead, kind, bumps, active, onActivate, onCopy, onSend, onOpen }) {
+function MessageCard({ lead, kind, bumps, bumpsB, active, onActivate, onCopy, onSend, onOpen }) {
   const isFu = kind === 'fu';
   const fuIndex = (lead.fuCount || 0) + 1;
+  // Test A/B de follow-ups POR TOQUE: variante sugerida por hash estable
+  // (lead + nº de toque), con toggle manual para forzarla si hace falta.
+  const [variant, setVariant] = udS(isFu ? PDATA.fuVariant(lead.id, fuIndex) : 'A');
+  const bumpSet = (variant === 'B' && bumpsB && bumpsB.length) ? bumpsB : bumps;
   const suggested = isFu
-    ? PDATA.fillBump(bumps[Math.min(2, fuIndex - 1)], lead.nombre.split(' ')[0])
+    ? PDATA.fillBump(bumpSet[Math.min(2, fuIndex - 1)], lead.nombre.split(' ')[0])
     : lead.mensaje;
   const [editing, setEditing] = udS(false);
   const [text, setText] = udS(suggested);
-  udE(() => { setText(suggested); setEditing(false); }, [lead.id, kind]);
+  udE(() => { if (isFu) setVariant(PDATA.fuVariant(lead.id, fuIndex)); }, [lead.id, fuIndex]);
+  udE(() => { setText(suggested); setEditing(false); }, [lead.id, kind, variant]);
   const altered = text.trim() !== suggested.trim();
 
   return (
@@ -41,8 +46,16 @@ function MessageCard({ lead, kind, bumps, active, onActivate, onCopy, onSend, on
         <LeadLine lead={lead} onOpen={onOpen} />
       </div>
       {isFu && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
           <span className="pill" style={{ background: 'var(--warm-bg)', color: 'var(--warm)' }}>Follow-up {fuIndex}/3</span>
+          <button onClick={(e) => { e.stopPropagation(); setVariant((v) => (v === 'A' ? 'B' : 'A')); }}
+            title="Formato del test A/B de follow-ups (clic para cambiar)"
+            className="pill"
+            style={{ cursor: 'pointer', border: '1px solid var(--line-md)', fontWeight: 700,
+              background: variant === 'B' ? 'var(--cold-bg)' : 'var(--gold-dim)',
+              color: variant === 'B' ? 'var(--cold)' : 'var(--gold-bright)' }}>
+            🧪 Formato {variant}
+          </button>
           <span className="meta">Último toque {ageLabel(lead.ultimoContacto)}</span>
         </div>
       )}
@@ -60,7 +73,7 @@ function MessageCard({ lead, kind, bumps, active, onActivate, onCopy, onSend, on
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
         <Button variant="gold" icon="copy" onClick={() => onCopy(text)}>Copiar</Button>
-        <Button variant="default" icon="check" onClick={() => onSend(lead, text, altered)}>{isFu ? 'FU enviado' : 'Enviado'}</Button>
+        <Button variant="default" icon="check" onClick={() => onSend(lead, text, altered, variant)}>{isFu ? 'FU enviado' : 'Enviado'}</Button>
         <Button variant="ghost" size="sm" icon="pencil" onClick={() => setEditing((e) => !e)}>{editing ? 'Hecho' : 'Editar antes de enviar'}</Button>
       </div>
     </div>
@@ -221,10 +234,10 @@ function MiDia({ leads, config, actions, daily, ammo, tasks, taskActions }) {
         <SectionCard title="Follow-ups de hoy" emoji="↩️" count={q.followupsHoy.length}
           right={<span className="meta">Máx. 3 · uno al día</span>}>
           {q.followupsHoy.slice(0, 8).map((l) => (
-            <MessageCard key={l.id} lead={l} kind="fu" bumps={config.bumps}
+            <MessageCard key={l.id} lead={l} kind="fu" bumps={config.bumps} bumpsB={config.bumpsB}
               active={false} onActivate={() => {}}
               onCopy={actions.copy}
-              onSend={(lead, text) => actions.markFollowup(lead, text)}
+              onSend={(lead, text, _alt, variant) => actions.markFollowup(lead, text, variant)}
               onOpen={actions.openLead} />
           ))}
         </SectionCard>

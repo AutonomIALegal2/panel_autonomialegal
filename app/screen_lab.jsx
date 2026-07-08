@@ -83,6 +83,52 @@ function TouchChart({ data }) {
   );
 }
 
+/* ── A/B de follow-ups: formato A (suave) vs B (directo), medido POR TOQUE ── */
+function FuAbCard({ leads }) {
+  const s = fuAbStats(leads);
+  const total = s.A.enviados + s.B.enviados;
+  const best = total && s.A.enviados && s.B.enviados
+    ? (s.A.rate === s.B.rate ? null : (s.A.rate > s.B.rate ? 'A' : 'B'))
+    : null;
+  const Row = ({ v, data }) => (
+    <div style={{ display: 'grid', gridTemplateColumns: '92px 1fr auto', gap: 12, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--line)' }}>
+      <span className="pill" style={{ fontWeight: 700, justifySelf: 'start',
+        background: v === 'B' ? 'var(--cold-bg)' : 'var(--gold-dim)',
+        color: v === 'B' ? 'var(--cold)' : 'var(--gold-bright)' }}>
+        Formato {v}{best === v ? ' 👑' : ''}
+      </span>
+      <div style={{ height: 8, borderRadius: 99, background: 'var(--field-bg)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${Math.min(100, data.rate)}%`, borderRadius: 99,
+          background: v === 'B' ? 'var(--cold)' : 'linear-gradient(90deg, var(--gold), var(--gold-deep))' }} />
+      </div>
+      <span className="meta tnum"><b style={{ color: 'var(--text)', fontSize: 14 }}>{data.rate.toFixed(0)}%</b> · {data.respuestas}/{data.enviados}</span>
+    </div>
+  );
+  return (
+    <div className="card card-hair" style={{ padding: 18 }}>
+      <h3 className="h-sec" style={{ marginBottom: 4 }}>A/B de follow-ups · formato A vs B</h3>
+      <p className="meta" style={{ marginBottom: 12 }}>
+        A = suave/conversacional · B = directo al deseo. Medido <b>por toque</b>: un formato se apunta la respuesta si fue el último follow-up antes de que el lead contestara.
+      </p>
+      {total === 0
+        ? <p className="meta" style={{ padding: '8px 0' }}>Aún sin follow-ups del test. Los FU enviados desde hoy llevan su formato (🧪 A/B) y aparecerán aquí.</p>
+        : (<>
+            <Row v="A" data={s.A} />
+            <Row v="B" data={s.B} />
+            {s.porToque.length > 0 && (
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 12 }}>
+                {s.porToque.map((t) => (
+                  <span key={t.key} className="meta tnum" style={{ background: 'var(--field-bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '4px 9px' }}>
+                    {t.key} → {t.rate.toFixed(0)}% ({t.respuestas}/{t.enviados})
+                  </span>
+                ))}
+              </div>
+            )}
+          </>)}
+    </div>
+  );
+}
+
 function LabAB({ leads }) {
   const stats = abStats(leads);
   const touch = touchBreakdown(leads);
@@ -96,6 +142,8 @@ function LabAB({ leads }) {
       </div>
 
       {PDATA.FRAMEWORKS.map((fw) => <FrameworkCard key={fw.id} fw={fw} stats={stats} />)}
+
+      <FuAbCard leads={leads} />
 
       <TouchChart data={touch} />
     </div>

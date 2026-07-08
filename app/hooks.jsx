@@ -220,9 +220,20 @@ function useLeads() {
 }
 
 /* ══════════════════════ useConfig ══════════════════════ */
-const CONFIG_DEFAULT = { objetivoDiario: 40, ticketMedio: 50, umbralMunicion: 3, bumps: window.PDATA.BUMPS_DEFAULT.slice(), humor: true, theme: 'dark' };
-const cfgToRow = (c) => ({ id: 1, objetivo_diario: c.objetivoDiario, ticket_medio: c.ticketMedio, umbral_municion: c.umbralMunicion, bumps: c.bumps, humor: c.humor, theme: c.theme });
-const rowToCfg = (r) => ({ objetivoDiario: r.objetivo_diario, ticketMedio: Number(r.ticket_medio), umbralMunicion: r.umbral_municion, bumps: (r.bumps && r.bumps.length) ? r.bumps : window.PDATA.BUMPS_DEFAULT.slice(), humor: r.humor, theme: r.theme });
+const CONFIG_DEFAULT = { objetivoDiario: 40, ticketMedio: 50, umbralMunicion: 3, bumps: window.PDATA.BUMPS_DEFAULT.slice(), bumpsB: window.PDATA.BUMPS_B_DEFAULT.slice(), humor: true, theme: 'dark' };
+/* La columna jsonb `bumps` de panel_config lleva las DOS series del test A/B:
+   [0..2] = serie A, [3..5] = serie B. Retrocompatible: si en BD hay solo 3
+   (formato viejo), esas son la A y la B sale de los defaults. Sin ALTER TABLE. */
+const cfgToRow = (c) => ({ id: 1, objetivo_diario: c.objetivoDiario, ticket_medio: c.ticketMedio, umbral_municion: c.umbralMunicion, bumps: [...c.bumps, ...c.bumpsB], humor: c.humor, theme: c.theme });
+const rowToCfg = (r) => {
+  const arr = (r.bumps && r.bumps.length) ? r.bumps : [];
+  return {
+    objetivoDiario: r.objetivo_diario, ticketMedio: Number(r.ticket_medio), umbralMunicion: r.umbral_municion,
+    bumps: arr.length >= 3 ? arr.slice(0, 3) : window.PDATA.BUMPS_DEFAULT.slice(),
+    bumpsB: arr.length >= 6 ? arr.slice(3, 6) : window.PDATA.BUMPS_B_DEFAULT.slice(),
+    humor: r.humor, theme: r.theme,
+  };
+};
 
 function useConfig() {
   const [config, setConfigState] = uS(CONFIG_DEFAULT);

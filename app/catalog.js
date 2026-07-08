@@ -65,7 +65,24 @@
     '{f}, te dejo esto por aquí arriba por si se quedó abajo la conversación 🙌\n\nMe interesa de verdad cómo lo lleváis: los expedientes y los plazos los tenéis en un mismo sitio, o cada cosa por su lado?',
     'Cierro el hilo por no insistir, {f}. Si en algún momento quieres ver cómo tener plazos y expedientes bajo control, aquí me tienes. Un abrazo!',
   ];
+  /* Serie B del test A/B de follow-ups (Hormozi): B1 = 9-word directo al deseo ·
+     B2 = dolor concreto + pregunta fácil de contestar (sí/no) · B3 = cierre con
+     pregunta binaria en vez de despedida. La A es suave/conversacional; la B, directa. */
+  const BUMPS_B_DEFAULT = [
+    '{f}! Sigues queriendo tener los expedientes y plazos del despacho en un solo sitio?',
+    'Te dejo un dato, {f}: la mayoría de despachos con los que hablo pierde algún cliente al año por contactar tarde — no por mal trabajo, por puro caos del día a día.\n\nOs ha pasado alguna vez?',
+    'Cierro el hilo, {f}, que no quiero ser pesado 🙂\n\nSolo por curiosidad antes de irme: el control de plazos y expedientes lo dais por resuelto en el despacho, o es de esas cosas de «ya se mirará»?',
+  ];
   const fillBump = (tpl, f) => tpl.replace(/\{f\}/g, f);
+  /* Variante A/B del follow-up: hash determinista por (lead, nº de toque) →
+     estable entre renders y sesiones, reparto ~50/50, y el MISMO lead puede
+     recibir FU1·A y FU2·B (el test es POR TOQUE, no por lead). */
+  const fuVariant = (id, fu) => {
+    const s = String(id) + '·' + fu;
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return (h & 1) ? 'B' : 'A';
+  };
   const OFERTA_TPL = (f) => `Genial ${f}. Te propongo esto: te doy acceso 30 días como «despacho fundador», sin coste y sin tarjeta. Montamos tu despacho dentro juntos y, si te sirve, hablamos de números. Si no, no pasa nada y te llevas el sistema montado. ¿Te paso el acceso?`;
 
   const FRASES_META = [
@@ -80,7 +97,7 @@
   window.PDATA = {
     TODAY, dayOffset, now,
     ETAPAS, ETAPA_ORDER, TEMPS, VARIANTS, FRAMEWORKS, AREAS, PERFILES,
-    BUMPS_DEFAULT, FRASES_META, FRASES_VACIO, OFERTA_TPL, fillBump,
+    BUMPS_DEFAULT, BUMPS_B_DEFAULT, FRASES_META, FRASES_VACIO, OFERTA_TPL, fillBump, fuVariant,
     byId: (arr, id) => arr.find((x) => x.id === id),
     etapa: (id) => ETAPAS.find((e) => e.id === id),
     temp: (id) => TEMPS.find((t) => t.id === id),

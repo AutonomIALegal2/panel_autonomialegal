@@ -76,6 +76,38 @@ function abStats(leads, minMature = 7) {
   return out;
 }
 
+/* ── A/B de FOLLOW-UPS (por toque) ──
+   Cada FU enviado lleva su formato en el type del mensaje ('FU1·A' / 'FU2·B').
+   Un formato se apunta la respuesta si fue el ÚLTIMO toque antes de que el
+   lead respondiera. Los FU antiguos sin sufijo (pre-test) quedan fuera. */
+function fuAbStats(leads) {
+  const mk = () => ({ enviados: 0, respuestas: 0 });
+  const out = { A: mk(), B: mk() };
+  const porToque = {};   // 'FU1·A' → {enviados, respuestas}
+  leads.forEach((l) => {
+    const fus = (l.messages || []).filter((m) => /^FU\d·[AB]$/.test(String(m.type)));
+    if (!fus.length) return;
+    fus.forEach((m) => {
+      const v = m.type.slice(-1);
+      out[v].enviados++;
+      (porToque[m.type] = porToque[m.type] || mk()).enviados++;
+    });
+    const responded = RESPONDED_STAGES.has(l.stage) || l.replyType;
+    if (responded) {
+      const last = fus[fus.length - 1];
+      const v = last.type.slice(-1);
+      out[v].respuestas++;
+      porToque[last.type].respuestas++;
+    }
+  });
+  const withRate = (o) => ({ ...o, rate: rate(o.respuestas, o.enviados) });
+  return {
+    A: withRate(out.A), B: withRate(out.B),
+    porToque: Object.entries(porToque).sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => ({ key: k, ...withRate(v) })),
+  };
+}
+
 /* respuesta según nº de toque (a la 1ª / tras FU1 / FU2 / FU3) */
 function touchBreakdown(leads) {
   // usamos fuCount en el momento de responder (aprox: los que respondieron con N follow-ups previos)
@@ -139,6 +171,6 @@ function cutBy(leads, keyFn) {
 
 Object.assign(window, {
   SENT_STAGES, RESPONDED_STAGES, ADVANCED_STAGES, PIPELINE_MONEY_STAGES,
-  pipelineMoney, queues, replyStats, ammoStatus, abStats, touchBreakdown,
+  pipelineMoney, queues, replyStats, ammoStatus, abStats, fuAbStats, touchBreakdown,
   FUNNEL_STEPS, funnel, reached, cutBy,
 });

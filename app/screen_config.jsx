@@ -87,6 +87,8 @@ function Configuracion({ config, setConfig, onImportCSV, onImportJSON, onExport,
   const csvRef = ugR(null); const jsonRef = ugR(null);
   const [bumps, setBumps] = ugS(config.bumps);
   const saveBumps = (i, v) => { const next = bumps.slice(); next[i] = v; setBumps(next); setConfig({ bumps: next }); };
+  const [bumpsB, setBumpsB] = ugS(config.bumpsB || []);
+  const saveBumpsB = (i, v) => { const next = bumpsB.slice(); next[i] = v; setBumpsB(next); setConfig({ bumpsB: next }); };
 
   return (
     <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760, margin: '0 auto' }}>
@@ -104,11 +106,23 @@ function Configuracion({ config, setConfig, onImportCSV, onImportJSON, onExport,
         </div>
       </SectionCard>
 
-      <SectionCard title="Follow-ups (framework Hormozi)" emoji="↩️" right={<span className="meta">máx. 3, uno al día</span>}>
+      <SectionCard title="Follow-ups · formato A (suave)" emoji="↩️" right={<span className="meta">máx. 3, uno al día</span>}>
         <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {bumps.map((b, i) => (
-            <Field key={i} label={`Bump ${i + 1} · FU${i + 1}`}>
+            <Field key={i} label={`Bump ${i + 1} · FU${i + 1}·A`}>
               <Textarea value={b} onChange={(e) => saveBumps(i, e.target.value)} rows={2} />
+              <span className="meta" style={{ display: 'block', marginTop: 4 }}>Usa <code style={{ color: 'var(--gold-bright)' }}>{'{f}'}</code> para el nombre de pila.</span>
+            </Field>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Follow-ups · formato B (directo, test A/B)" emoji="🧪" right={<span className="meta">se reparte ~50/50 por toque</span>}>
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p className="meta" style={{ margin: 0 }}>Cada follow-up de la cola sale con formato A o B (asignación estable al 50%, cambiable en la propia tarjeta). Los resultados se comparan en el Laboratorio.</p>
+          {bumpsB.map((b, i) => (
+            <Field key={i} label={`Bump ${i + 1} · FU${i + 1}·B`}>
+              <Textarea value={b} onChange={(e) => saveBumpsB(i, e.target.value)} rows={2} />
               <span className="meta" style={{ display: 'block', marginTop: 4 }}>Usa <code style={{ color: 'var(--gold-bright)' }}>{'{f}'}</code> para el nombre de pila.</span>
             </Field>
           ))}

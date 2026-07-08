@@ -132,26 +132,34 @@ function App() {
     }
   };
 
-  const markFollowup = (lead, text) => {
+  const markFollowup = (lead, text, variant) => {
     const prev = leadsRef.current;
     const fi = (lead.fuCount || 0) + 1;
+    // Variante del test A/B de follow-ups (por TOQUE). Se persiste en el type
+    // del mensaje ('FU1·A' / 'FU1·B') → lead_messages.tipo, sin tocar esquema.
+    const v = variant === 'B' ? 'B' : 'A';
     patchLead(lead.id, (l) => ({
       fuCount: fi, ultimoContacto: PDATA.TODAY,
-      messages: [...(l.messages || []), { id: 'm' + Date.now(), type: 'FU' + fi, suggested: text, sent: text, altered: false, date: nowTs() }],
-      events: [{ ts: nowTs(), kind: 'fu', text: `Follow-up ${fi}/3 enviado` }, ...(l.events || [])],
+      messages: [...(l.messages || []), { id: 'm' + Date.now(), type: `FU${fi}·${v}`, suggested: text, sent: text, altered: false, date: nowTs() }],
+      events: [{ ts: nowTs(), kind: 'fu', text: `Follow-up ${fi}/3 enviado · formato ${v}` }, ...(l.events || [])],
     }));
-    pushToast(`FU ${fi}/3 enviado a ${lead.nombre.split(' ')[0]}`, { emoji: '↩️', undo: prev });
+    pushToast(`FU ${fi}/3 (formato ${v}) enviado a ${lead.nombre.split(' ')[0]}`, { emoji: '↩️', undo: prev });
   };
 
   const markReply = (lead, type, fecha) => {
     const prev = leadsRef.current;
     const dia = fecha || PDATA.TODAY;
+    // ¿Tras qué toque respondió? Se deriva del historial: el último FU enviado
+    // (con su formato A/B) — o «a la 1ª» si respondió al M1 sin follow-ups.
+    const fus = (lead.messages || []).filter((m) => /^FU\d/.test(String(m.type)));
+    const lastFu = fus[fus.length - 1];
+    const tras = lastFu ? ` · tras ${lastFu.type}` : ' · a la 1ª (M1)';
     patchLead(lead.id, (l) => ({
       stage: 'respondio', replyType: type, repliedAt: dia,
       qualif: l.qualif || { size: 'Por cualificar', crm: '—', expedientes: '—', frustracion: '—' },
-      events: [{ ts: nowTs(), kind: 'reply', text: 'Respuesta ' + type.toLowerCase() + (dia !== PDATA.TODAY ? ` · ${dia}` : '') }, ...(l.events || [])],
+      events: [{ ts: nowTs(), kind: 'reply', text: 'Respuesta ' + type.toLowerCase() + tras + (dia !== PDATA.TODAY ? ` · ${dia}` : '') }, ...(l.events || [])],
     }));
-    if (type === 'POSITIVA') { pushToast('¡Ha picado! 🎣', { emoji: '🎣', undo: prev }); }
+    if (type === 'POSITIVA') { pushToast('¡Ha picado! 🎣' + (lastFu ? ` (${lastFu.type})` : ''), { emoji: '🎣', undo: prev }); }
     else pushToast(`Respuesta registrada (${type.toLowerCase()})`, { emoji: '💬', undo: prev });
   };
 
